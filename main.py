@@ -19,9 +19,20 @@ class Person(BaseModel):
     age = IntegerField()
     likes_chocolate = BooleanField()
 
-db.drop_tables([Person])
-db.create_tables([Person])
+class Chair(BaseModel):
+    chair_type = CharField()
+    material = CharField()
+    color = CharField()
+    price = IntegerField()
+    rating = DecimalField(max_digits=2, decimal_places=1)
 
+
+
+db.drop_tables([Person, Chair])
+db.create_tables([Person, Chair])
+
+chair_1 = Chair(chair_type='rocking chair', material='wood', color='red', price=2, rating=5)
+chair_1.save()
 kan = Person(name='kan', birthday=date(2002, 7, 18), nationality='Chinese American', age=20, likes_chocolate=True)
 kan.save()
 
@@ -50,5 +61,22 @@ def person(id=None):
         Person.delete().where(Person.id == id).execute()
         return f"person {id} deleted"
 
+
+@app.route('/chair/', methods=['GET', 'POST'])
+@app.route('/chair/<id>', methods=['GET'])
+def chair(id=None):
+    if request.method == 'GET':
+        if id:
+            return jsonify(model_to_dict(Chair.get(Chair.id == id)))
+        else:
+            chair_list = []
+            for chair in Chair.select():
+                chair_list.append(model_to_dict(chair))
+            return jsonify(chair_list)
+
+    if request.method == 'POST':
+        new_chair = dict_to_model(Chair, request.get_json())
+        new_chair.save()
+        return jsonify({"success": True})
 
 app.run(debug=True, port=1234)
